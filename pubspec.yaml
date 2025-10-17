@@ -1,0 +1,40 @@
+name: kosnice_app
+description: A new Flutter project.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.1
+  qr_flutter: ^4.1.0
+  share_plus: ^11.0.0
+  image_picker: ^1.0.4
+  geolocator: ^14.0.1
+  file_picker: ^10.2.0
+  flutter_localizations:
+    sdk: flutter
+  mobile_scanner: ^7.0.1
+  url_launcher: ^6.2.6
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.6
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+  generate: true
