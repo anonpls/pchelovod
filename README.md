@@ -8,7 +8,7 @@ Svaka košnica ima svoj **QR kod**, putem kojeg se lako pristupa podacima i isto
 ### 🐝 **Funkcionalnosti**
 ✅ Dodavanje nove košnice sa:
 - ID-jem, imenom, opisom i tipom (LR / DB)
-- Rasom pčela (npr. Kranjska, Buckfast…)
+- Rasom pčela (npr. Kranjska, Buckfast...)
 - Statusom matice (da / ne)
 
 ✅ Pregled svih košnica  
