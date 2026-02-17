@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kosnice_app/models/hive_entry.dart';
 import 'package:kosnice_app/screens/hive_detail_screen.dart';
 import 'package:kosnice_app/l10n/app_localizations.dart';
+import 'package:kosnice_app/services/auth_service.dart';
+import 'package:kosnice_app/services/hive_api_service.dart';
 
 class HiveListScreen extends StatefulWidget {
   const HiveListScreen({super.key});
@@ -15,6 +17,22 @@ class _HiveListScreenState extends State<HiveListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
   String _sortBy = 'id'; // ili 'name'
+  final _authService = AuthService();
+  final _hiveApiService = HiveApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  Future<void> _sync() async {
+    final token = await _authService.getToken();
+    if (token == null) return;
+    try {
+      await _hiveApiService.syncHivesToLocal(token: token);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +41,12 @@ class _HiveListScreenState extends State<HiveListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.viewHives),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _sync,
+          ),
+        ],
       ),
       body: ValueListenableBuilder<Box<HiveEntry>>(
         valueListenable: box.listenable(),

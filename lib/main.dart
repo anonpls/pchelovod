@@ -15,6 +15,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:kosnice_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kosnice_app/screens/auth_screen.dart';
+import 'package:kosnice_app/services/auth_service.dart';
+import 'package:kosnice_app/services/hive_api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,12 +44,46 @@ class KosniceApp extends StatefulWidget {
 class _KosniceAppState extends State<KosniceApp> {
   ThemeMode _themeMode = ThemeMode.light;
   Locale? _locale;
+  bool _authChecked = false;
+  bool _isAuthenticated = false;
+  final _authService = AuthService();
+  final _hiveApiService = HiveApiService();
 
   @override
   void initState() {
     super.initState();
     _loadTheme();
     _loadLocale();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await _authService.getToken();
+    if (token != null) {
+      try {
+        await _hiveApiService.syncHivesToLocal(token: token);
+        _isAuthenticated = true;
+      } catch (_) {
+        _isAuthenticated = false;
+        await _authService.logout();
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _authChecked = true;
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+    await Hive.box<HiveEntry>('hives').clear();
+    if (mounted) {
+      setState(() {
+        _isAuthenticated = false;
+      });
+    }
   }
 
   Future<void> _loadTheme() async {
@@ -125,10 +162,21 @@ class _KosniceAppState extends State<KosniceApp> {
         Locale('en'),
         Locale('ru'),
       ],
-      home: HomeScreen(
-        onToggleTheme: _toggleTheme,
-        onChangeLanguage: _changeLanguage,
-      ),
+      home: !_authChecked
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : _isAuthenticated
+              ? HomeScreen(
+                  onToggleTheme: _toggleTheme,
+                  onChangeLanguage: _changeLanguage,
+                  onLogout: _logout,
+                )
+              : AuthScreen(
+                  onAuthSuccess: () {
+                    setState(() {
+                      _isAuthenticated = true;
+                    });
+                  },
+                ),
     );
   }
 }
@@ -136,7 +184,8 @@ class _KosniceAppState extends State<KosniceApp> {
 class HomeScreen extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final void Function(Locale) onChangeLanguage;
-  const HomeScreen({super.key, required this.onToggleTheme, required this.onChangeLanguage});
+  final VoidCallback onLogout;
+  const HomeScreen({super.key, required this.onToggleTheme, required this.onChangeLanguage, required this.onLogout});
 
   Future<void> _exportAllData(BuildContext context) async {
     final box = Hive.box<HiveEntry>('hives');
@@ -272,6 +321,10 @@ class HomeScreen extends StatelessWidget {
               const PopupMenuItem(value: Locale('en'), child: Text('English')),
               const PopupMenuItem(value: Locale('ru'), child: Text('Русский')),
             ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: onLogout,
           ),
         ],
       ),

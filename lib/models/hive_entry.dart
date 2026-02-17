@@ -8,6 +8,9 @@ class HiveEntry extends HiveObject {
   @HiveField(0)
   final String id;
 
+  @HiveField(16)
+  int? serverId;
+
   @HiveField(1)
   final String? name;
 
@@ -55,6 +58,7 @@ class HiveEntry extends HiveObject {
 
   HiveEntry({
     required this.id,
+    this.serverId,
     this.name,
     this.description,
     required this.type,

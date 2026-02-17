@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hive/hive.dart';
 import 'package:kosnice_app/models/hive_entry.dart';
 import 'package:kosnice_app/models/hive_check_entry.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,6 +11,8 @@ import 'package:kosnice_app/screens/hive_history_screen.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 import '../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:kosnice_app/services/auth_service.dart';
+import 'package:kosnice_app/services/hive_api_service.dart';
 
 
 class HiveDetailScreen extends StatefulWidget {
@@ -28,9 +31,11 @@ class HiveDetailScreen extends StatefulWidget {
 
 class _HiveDetailScreenState extends State<HiveDetailScreen> {
   late List<HiveCheckEntry> history;
-  late final HiveEntry hive;
+  late HiveEntry hive;
   final picker = ImagePicker();
   bool? _queenPresent; // Podaci o matici: DA (true) / NE (false)
+  final _authService = AuthService();
+  final _hiveApiService = HiveApiService();
 
   @override
   void initState() {
@@ -165,26 +170,29 @@ class _HiveDetailScreenState extends State<HiveDetailScreen> {
               );
 
               if (updated != null) {
+                final updatedHive = HiveEntry(
+                  id: hive.id,
+                  serverId: hive.serverId,
+                  name: updated['name'],
+                  description: updated['desc'],
+                  type: updated['type'] ?? hive.type,
+                  tags: hive.tags,
+                  notes: hive.notes,
+                  imagePaths: hive.imagePaths,
+                  latitude: hive.latitude,
+                  longitude: hive.longitude,
+                  frames: hive.frames,
+                  total: hive.total,
+                  brood: hive.brood,
+                  honey: hive.honey,
+                  history: [...hive.history],
+                  breed: (updated['breed'] != null && updated['breed']!.isNotEmpty) ? updated['breed'] : hive.breed,
+                  queenPresent: hive.queenPresent,
+                );
+                await Hive.box<HiveEntry>('hives').put(updatedHive.id, updatedHive);
+                if (!mounted) return;
                 setState(() {
-                  hive = HiveEntry(
-                    id: hive.id,
-                    name: updated['name'],
-                    description: updated['desc'],
-                    type: updated['type'] ?? hive.type,
-                    tags: hive.tags,
-                    notes: hive.notes,
-                    imagePaths: hive.imagePaths,
-                    latitude: hive.latitude,
-                    longitude: hive.longitude,
-                    frames: hive.frames,
-                    total: hive.total,
-                    brood: hive.brood,
-                    honey: hive.honey,
-                    history: [...hive.history],
-                    breed: (updated['breed'] != null && updated['breed']!.isNotEmpty) ? updated['breed'] : hive.breed,
-                    queenPresent: hive.queenPresent,
-                  );
-                  hive.save();
+                  hive = updatedHive;
                 });
               }
             },
@@ -228,8 +236,22 @@ class _HiveDetailScreenState extends State<HiveDetailScreen> {
               );
 
               if (confirm == true) {
-                await hive.delete();
-                if (mounted) Navigator.pop(context);
+                try {
+                  final token = await _authService.getToken();
+                  if (token != null && hive.serverId != null) {
+                    await _hiveApiService.deleteHive(
+                      token: token,
+                      hiveServerId: hive.serverId!,
+                    );
+                  }
+                  await hive.delete();
+                  if (mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
+                  );
+                }
               }
             },
           ),
