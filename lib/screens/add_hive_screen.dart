@@ -3,6 +3,8 @@ import 'package:kosnice_app/screens/hive_detail_screen.dart';
 import 'package:kosnice_app/models/hive_entry.dart';
 import 'package:hive/hive.dart';
 import 'package:kosnice_app/l10n/app_localizations.dart';
+import 'package:kosnice_app/services/auth_service.dart';
+import 'package:kosnice_app/services/hive_api_service.dart';
 
 class AddHiveScreen extends StatefulWidget {
   final String hiveId;
@@ -13,12 +15,21 @@ class AddHiveScreen extends StatefulWidget {
 }
 
 class _AddHiveScreenState extends State<AddHiveScreen> {
+  final _authService = AuthService();
+  final _hiveApiService = HiveApiService();
   final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
   final _descriptionController = TextEditingController();
   String hiveType = 'LR';
+
+
+  @override
+  void initState() {
+    super.initState();
+    _idController.text = widget.hiveId;
+  }
 
   @override
   void dispose() {
@@ -40,15 +51,32 @@ class _AddHiveScreenState extends State<AddHiveScreen> {
         type: hiveType,
         history: [],
       );
-      // Add to Hive box before navigating
-      final box = Hive.box<HiveEntry>('hives');
-      await box.put(hiveId, hive);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HiveDetailScreen(hive: hive, history: []),
-        ),
-      );
+
+      try {
+        final token = await _authService.getToken();
+        if (token == null) {
+          throw Exception('Необходима авторизация');
+        }
+
+        final serverId = await _hiveApiService.createHive(token: token, hive: hive);
+        hive.serverId = serverId;
+
+        final box = Hive.box<HiveEntry>('hives');
+        await box.put(hiveId, hive);
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HiveDetailScreen(hive: hive, history: []),
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
     }
   }
 

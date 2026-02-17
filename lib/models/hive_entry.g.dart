@@ -19,6 +19,7 @@ class HiveEntryAdapter extends TypeAdapter<HiveEntry> {
     return HiveEntry(
       id: fields[0] as String,
       name: fields[1] as String?,
+      serverId: fields[16] as int?,
       description: fields[2] as String?,
       type: fields[3] as String,
       tags: (fields[6] as List).cast<String>(),
@@ -39,7 +40,7 @@ class HiveEntryAdapter extends TypeAdapter<HiveEntry> {
   @override
   void write(BinaryWriter writer, HiveEntry obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(17)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -71,7 +72,9 @@ class HiveEntryAdapter extends TypeAdapter<HiveEntry> {
       ..writeByte(14)
       ..write(obj.breed)
       ..writeByte(15)
-      ..write(obj.queenPresent);
+      ..write(obj.queenPresent)
+      ..writeByte(16)
+      ..write(obj.serverId);
   }
 
   @override
