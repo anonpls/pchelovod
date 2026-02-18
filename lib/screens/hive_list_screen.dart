@@ -64,10 +64,6 @@ class _HiveListScreenState extends State<HiveListScreen> {
             hives.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
           }
 
-          if (hives.isEmpty) {
-            return Center(child: Text(AppLocalizations.of(context)!.noHivesFound));
-          }
-
           return Column(
             children: [
               Padding(
@@ -108,36 +104,38 @@ class _HiveListScreenState extends State<HiveListScreen> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: hives.length,
-                  itemBuilder: (context, index) {
-                    final hive = hives[index];
-                    return ListTile(
-                      title: Text(hive.name ?? AppLocalizations.of(context)!.noNameLabel),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${AppLocalizations.of(context)!.hiveId}: ${hive.id}'),
-                          Text('${AppLocalizations.of(context)!.type}: ${hive.type}'),
-                          Text('${AppLocalizations.of(context)!.hiveBreed}: ${hive.breed != null && hive.breed!.isNotEmpty ? hive.breed : AppLocalizations.of(context)!.noNameLabel}'),
-                          Text('${AppLocalizations.of(context)!.queen}: ${hive.queenPresent == true ? AppLocalizations.of(context)!.yes : AppLocalizations.of(context)!.no}'),
-                        ],
-                      ),
-                      isThreeLine: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HiveDetailScreen(
-                              hive: hive,
-                              history: hive.history,
+                child: hives.isEmpty
+                    ? Center(child: Text(AppLocalizations.of(context)!.noHivesFound))
+                    : ListView.builder(
+                        itemCount: hives.length,
+                        itemBuilder: (context, index) {
+                          final hive = hives[index];
+                          return ListTile(
+                            title: Text(hive.name ?? AppLocalizations.of(context)!.noNameLabel),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${AppLocalizations.of(context)!.hiveId}: ${hive.id}'),
+                                Text('${AppLocalizations.of(context)!.type}: ${hive.type}'),
+                                Text('${AppLocalizations.of(context)!.hiveBreed}: ${hive.breed != null && hive.breed!.isNotEmpty ? hive.breed : AppLocalizations.of(context)!.noNameLabel}'),
+                                Text('${AppLocalizations.of(context)!.queen}: ${hive.queenPresent == true ? AppLocalizations.of(context)!.yes : AppLocalizations.of(context)!.no}'),
+                              ],
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                            isThreeLine: true,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HiveDetailScreen(
+                                    hive: hive,
+                                    history: hive.history,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           );
